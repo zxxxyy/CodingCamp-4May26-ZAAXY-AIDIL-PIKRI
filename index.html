@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Life Dashboard</title>
   <link rel="stylesheet" href="css/style.css" />
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 </head>
 <body>
-
-  <!-- Settings Button (fixed) -->
-  <button type="button" class="settings-btn" id="settings-btn" aria-label="Open settings">⚙️</button>
 
   <!-- Onboarding Banner -->
   <div class="onboarding" id="onboarding" role="status" aria-live="polite">
@@ -20,6 +19,7 @@
 
   <!-- Hero -->
   <header class="hero">
+    <button type="button" class="settings-btn" id="settings-btn" aria-label="Open settings"><i class="fa-solid fa-gear"></i></button>
     <div class="hero-meta">
       <p id="greeting-text" class="greeting-text">Good morning</p>
       <p id="current-date" class="current-date">Loading…</p>
@@ -31,6 +31,11 @@
     </div>
     <div class="hero-clock">
       <time id="current-time" class="current-time" aria-label="Current time">00:00:00</time>
+      <div class="motivasi-slider" aria-live="polite">
+        <p class="motivasi-text active">"Small steps every day lead to big results."</p>
+        <p class="motivasi-text">"Stay focused, stay consistent."</p>
+        <p class="motivasi-text">"Progress, not perfection."</p>
+      </div>
     </div>
   </header>
 
@@ -62,6 +67,12 @@
         <button type="button" class="btn btn-secondary" id="timer-stop">Pause</button>
         <button type="button" class="btn btn-ghost" id="timer-reset">Reset</button>
       </div>
+      <!-- Session Counter -->
+      <div class="session-counter" id="session-counter">
+        <span class="session-label">Today's sessions</span>
+        <div class="session-dots" id="session-dots"></div>
+        <button type="button" class="session-reset-btn" id="session-reset" aria-label="Reset session count">Reset</button>
+      </div>
     </section>
 
     <!-- ── Today's Tasks ── -->
@@ -77,11 +88,17 @@
       <div class="todo-input-row">
         <label for="todo-input" class="sr-only">New task</label>
         <input type="text" id="todo-input" class="field" placeholder="What do you need to do?" maxlength="120" autocomplete="off" />
+        <select id="todo-priority" class="field todo-priority-select" aria-label="Task priority">
+          <option value="normal">—</option>
+          <option value="high">🔴</option>
+          <option value="medium">🟡</option>
+          <option value="low">🟢</option>
+        </select>
         <button type="button" class="btn btn-primary" id="todo-add">Add Task</button>
       </div>
       <ul class="todo-list" id="todo-list" aria-label="Task list"></ul>
       <div class="empty-state" id="todo-empty">
-        <span class="empty-icon">📋</span>
+        <span class="empty-icon"><i class="fa-solid fa-clipboard-list"></i></span>
         <p>Start by adding your first task for today.</p>
       </div>
     </section>
@@ -128,7 +145,7 @@
       </div>
       <div class="links-grid" id="links-grid" aria-label="Quick links"></div>
       <div class="empty-state" id="links-empty">
-        <span class="empty-icon">🔗</span>
+        <span class="empty-icon"><i class="fa-solid fa-link"></i></span>
         <p>Save your frequently used links here.</p>
       </div>
     </section>
@@ -139,7 +156,7 @@
   <div class="settings-overlay" id="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="settings-panel">
       <div class="settings-header">
-        <h3 class="settings-title" id="settings-title">⚙️ Settings</h3>
+        <h3 class="settings-title" id="settings-title">Settings</h3>
         <button type="button" class="settings-close" id="settings-close" aria-label="Close settings">✕</button>
       </div>
 
@@ -204,9 +221,9 @@
           <button type="button" class="btn btn-ghost pomo-action-btn" id="pomo-reset-default">Reset Default</button>
         </div>
         <div class="pomo-modes">
-          <button type="button" class="btn btn-secondary pomo-mode-btn active" data-mode="focus">🎯 Focus</button>
-          <button type="button" class="btn btn-secondary pomo-mode-btn" data-mode="short">☕ Short</button>
-          <button type="button" class="btn btn-secondary pomo-mode-btn" data-mode="long">🛋️ Long</button>
+          <button type="button" class="btn btn-secondary pomo-mode-btn active" data-mode="focus"><i class="fa-solid fa-bullseye"></i> Focus</button>
+          <button type="button" class="btn btn-secondary pomo-mode-btn" data-mode="short"><i class="fa-solid fa-mug-hot"></i> Short</button>
+          <button type="button" class="btn btn-secondary pomo-mode-btn" data-mode="long"><i class="fa-solid fa-couch"></i> Long</button>
         </div>
       </div>
 
@@ -219,6 +236,23 @@
       <h3 class="modal-title" id="modal-title">Edit Task</h3>
       <label for="modal-input" class="sr-only">Task text</label>
       <input type="text" id="modal-input" class="field" maxlength="120" aria-label="Edit task" placeholder="Edit your task…" />
+
+      <div class="modal-meta-row">
+        <div class="modal-meta-item">
+          <label for="modal-priority" class="modal-meta-label">Priority</label>
+          <select id="modal-priority" class="field modal-select" aria-label="Task priority">
+            <option value="normal">Normal</option>
+            <option value="high">🔴 High</option>
+            <option value="medium">🟡 Medium</option>
+            <option value="low">🟢 Low</option>
+          </select>
+        </div>
+        <div class="modal-meta-item">
+          <label for="modal-deadline" class="modal-meta-label">Deadline</label>
+          <input type="date" id="modal-deadline" class="field" aria-label="Task deadline" />
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button type="button" class="btn btn-primary" id="modal-save">Save</button>
         <button type="button" class="btn btn-ghost" id="modal-cancel">Cancel</button>
@@ -227,6 +261,64 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Welcome Tour (first visit only) -->
+  <div class="tour-overlay" id="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+    <div class="tour-modal">
+
+      <!-- Step 1 -->
+      <div class="tour-step active" data-step="1">
+        <div class="tour-icon"><i class="fa-solid fa-gauge-high"></i></div>
+        <h2 class="tour-title" id="tour-title">Welcome to Life Dashboard</h2>
+        <p class="tour-desc">Your personal productivity hub — all in one place. Let's take a quick 30-second tour so you know exactly what to do.</p>
+        <div class="tour-feature-grid">
+          <div class="tour-feature"><i class="fa-solid fa-stopwatch"></i><span>Focus Timer</span></div>
+          <div class="tour-feature"><i class="fa-solid fa-list-check"></i><span>Task List</span></div>
+          <div class="tour-feature"><i class="fa-solid fa-note-sticky"></i><span>Quick Note</span></div>
+          <div class="tour-feature"><i class="fa-solid fa-link"></i><span>Quick Links</span></div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="tour-step" data-step="2">
+        <div class="tour-icon"><i class="fa-solid fa-stopwatch"></i></div>
+        <h2 class="tour-title">Focus Timer</h2>
+        <p class="tour-desc">Gunakan timer Pomodoro 25 menit untuk sesi fokus. Klik <strong>Start</strong> — timer akan berjalan dan memberi tahu kamu saat selesai.</p>
+        <div class="tour-tip"><i class="fa-solid fa-lightbulb"></i> Setelah 4 sesi fokus, ambil istirahat panjang untuk menjaga produktivitas.</div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="tour-step" data-step="3">
+        <div class="tour-icon"><i class="fa-solid fa-list-check"></i></div>
+        <h2 class="tour-title">Today's Tasks</h2>
+        <p class="tour-desc">Tulis semua yang perlu dikerjakan hari ini. Bisa tambah <strong>prioritas</strong> dan <strong>deadline</strong> lewat tombol edit.</p>
+        <div class="tour-tip"><i class="fa-solid fa-lightbulb"></i> Task diurutkan otomatis — prioritas tinggi selalu muncul paling atas.</div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="tour-step" data-step="4">
+        <div class="tour-icon"><i class="fa-solid fa-gear"></i></div>
+        <h2 class="tour-title">Personalisasi Dashboard</h2>
+        <p class="tour-desc">Klik tombol <strong><i class="fa-solid fa-gear"></i></strong> di pojok kanan atas untuk mengatur nama kamu, tampilan terang/gelap, dan durasi timer.</p>
+        <div class="tour-tip"><i class="fa-solid fa-lightbulb"></i> Semua data tersimpan otomatis di browser — tidak perlu login atau akun.</div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="tour-nav">
+        <div class="tour-dots" id="tour-dots">
+          <span class="tour-dot active" data-step="1"></span>
+          <span class="tour-dot" data-step="2"></span>
+          <span class="tour-dot" data-step="3"></span>
+          <span class="tour-dot" data-step="4"></span>
+        </div>
+        <div class="tour-btns">
+          <button type="button" class="btn btn-ghost" id="tour-skip">Skip</button>
+          <button type="button" class="btn btn-primary" id="tour-next">Next →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
   <script src="js/app.js"></script>
 </body>

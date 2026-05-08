@@ -27,12 +27,82 @@ function storageSet(key, value) {
   } catch {}
 }
 
-function showToast(message) {
+// ─── AUDIO & NOTIFICATION ────────────────────────────────────────────────────
+
+const AudioNotif = (function () {
+  let ctx = null;
+
+  function getCtx() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return ctx;
+  }
+
+  // Play a pleasant 3-tone chime
+  function playChime() {
+    try {
+      const ac   = getCtx();
+      const now  = ac.currentTime;
+      const tones = [523.25, 659.25, 783.99]; // C5, E5, G5
+
+      tones.forEach((freq, i) => {
+        const osc  = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain);
+        gain.connect(ac.destination);
+
+        osc.type      = 'sine';
+        osc.frequency.setValueAtTime(freq, now + i * 0.18);
+
+        gain.gain.setValueAtTime(0, now + i * 0.18);
+        gain.gain.linearRampToValueAtTime(0.35, now + i * 0.18 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + 0.6);
+
+        osc.start(now + i * 0.18);
+        osc.stop(now + i * 0.18 + 0.65);
+      });
+    } catch (e) {
+      // Audio not available — fail silently
+    }
+  }
+
+  // Browser push notification
+  function sendNotification(title, body) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body, icon: '' });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(p => {
+        if (p === 'granted') new Notification(title, { body });
+      });
+    }
+  }
+
+  return { playChime, sendNotification };
+})();
+
+
+function showToast(message, undoCallback = null) {
   const toast = document.getElementById('toast');
-  toast.textContent = message;
+  toast.innerHTML = '';
+
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = message;
+  toast.appendChild(msgSpan);
+
+  if (undoCallback) {
+    const undoBtn = document.createElement('button');
+    undoBtn.textContent = 'Undo';
+    undoBtn.className   = 'toast-undo';
+    undoBtn.addEventListener('click', () => {
+      undoCallback();
+      toast.classList.remove('show');
+    });
+    toast.appendChild(undoBtn);
+  }
+
   toast.classList.add('show');
   clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 3500);
 }
 
 
@@ -127,6 +197,36 @@ function showToast(message) {
 
   // Expose refresh so settings can trigger greeting update
   window._refreshGreeting = tick;
+})();
+
+
+// ─── MOTIVASI SLIDER ─────────────────────────────────────────────────────────
+
+(function initMotivasiSlider() {
+  const texts = document.querySelectorAll('.motivasi-text');
+  if (texts.length === 0) return;
+
+  let current = 0;
+
+  // Make sure only first is visible on start
+  texts.forEach((t, i) => {
+    t.className = 'motivasi-text' + (i === 0 ? ' active' : '');
+  });
+
+  setInterval(() => {
+    const prev = current;
+    current = (current + 1) % texts.length;
+
+    // Slide out current to left
+    texts[prev].classList.add('exit');
+
+    // Slide in next from right after a brief overlap
+    setTimeout(() => {
+      texts[prev].classList.remove('active', 'exit');
+      texts[current].classList.add('active');
+    }, 400);
+
+  }, 4000);
 })();
 
 
@@ -248,6 +348,11 @@ function showToast(message) {
     running = true;
     setRunningUI(true);
 
+    // Request notification permission on first start
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     const banner = document.getElementById('onboarding');
     if (!banner.classList.contains('hidden')) {
       banner.classList.add('hidden');
@@ -272,6 +377,13 @@ function showToast(message) {
         statusEl.textContent    = 'Done!';
         labelEl.textContent     = '🎉 Session complete! Take a well-earned break.';
         showToast('Focus session complete! 🎉');
+        AudioNotif.playChime();
+        AudioNotif.sendNotification(
+          'Session Complete! 🎉',
+          'Great work! Time to take a well-earned break.'
+        );
+        // Only count focus sessions
+        if (currentMode === 'focus') incrementSession();
       }
     }, 1000);
   }
@@ -353,6 +465,50 @@ function showToast(message) {
     b.addEventListener('click', () => switchMode(b.dataset.mode));
   });
 
+  // ── Session Counter ──────────────────────────────────────────────────────
+  const sessionDotsEl  = document.getElementById('session-dots');
+  const sessionResetEl = document.getElementById('session-reset');
+  const TODAY          = new Date().toDateString();
+
+  // Reset count if it's a new day
+  const saved = storageGet('dashboard_sessions', { date: TODAY, count: 0 });
+  let sessionCount = saved.date === TODAY ? saved.count : 0;
+
+  function saveSession() {
+    storageSet('dashboard_sessions', { date: TODAY, count: sessionCount });
+  }
+
+  function renderSessionDots() {
+    sessionDotsEl.innerHTML = '';
+    const total = Math.max(sessionCount, 8); // show at least 8 slots
+    for (let i = 0; i < total; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'session-dot' + (i < sessionCount ? ' filled' : '');
+      dot.setAttribute('aria-hidden', 'true');
+      sessionDotsEl.appendChild(dot);
+    }
+  }
+
+  function incrementSession() {
+    sessionCount++;
+    saveSession();
+    renderSessionDots();
+    // Every 4 sessions = 1 full set
+    if (sessionCount % 4 === 0) {
+      showToast(`🏆 ${sessionCount / 4} full set${sessionCount / 4 > 1 ? 's' : ''} complete! Take a long break.`);
+    }
+  }
+
+  sessionResetEl.addEventListener('click', () => {
+    sessionCount = 0;
+    saveSession();
+    renderSessionDots();
+    showToast('Session count reset');
+  });
+
+  renderSessionDots();
+  // ─────────────────────────────────────────────────────────────────────────
+
   btnStart.addEventListener('click', start);
   btnStop.addEventListener('click', stop);
   btnReset.addEventListener('click', resetTimer);
@@ -369,29 +525,87 @@ function showToast(message) {
 // ─── TO-DO LIST ──────────────────────────────────────────────────────────────
 
 (function initTodos() {
-  const inputEl    = document.getElementById('todo-input');
-  const addBtn     = document.getElementById('todo-add');
-  const listEl     = document.getElementById('todo-list');
-  const emptyEl    = document.getElementById('todo-empty');
-  const overlayEl  = document.getElementById('modal-overlay');
-  const modalInput = document.getElementById('modal-input');
-  const saveBtn    = document.getElementById('modal-save');
-  const cancelBtn  = document.getElementById('modal-cancel');
+  const inputEl        = document.getElementById('todo-input');
+  const prioritySelect = document.getElementById('todo-priority');
+  const addBtn         = document.getElementById('todo-add');
+  const listEl         = document.getElementById('todo-list');
+  const emptyEl        = document.getElementById('todo-empty');
+  const overlayEl      = document.getElementById('modal-overlay');
+  const modalInput     = document.getElementById('modal-input');
+  const modalPriority  = document.getElementById('modal-priority');
+  const modalDeadline  = document.getElementById('modal-deadline');
+  const saveBtn        = document.getElementById('modal-save');
+  const cancelBtn      = document.getElementById('modal-cancel');
 
   let todos     = storageGet('dashboard_todos', []);
   let editingId = null;
 
+  const PRIORITY_ORDER = { high: 0, medium: 1, normal: 2, low: 3 };
+  const PRIORITY_ICON  = { high: '🔴', medium: '🟡', low: '🟢', normal: '' };
+
   function save() { storageSet('dashboard_todos', todos); }
+
+  function isOverdue(deadline) {
+    if (!deadline) return false;
+    return new Date(deadline) < new Date(new Date().toDateString());
+  }
+
+  function isDueToday(deadline) {
+    if (!deadline) return false;
+    return new Date(deadline).toDateString() === new Date().toDateString();
+  }
+
+  function formatDeadline(deadline) {
+    if (!deadline) return '';
+    const d = new Date(deadline);
+    if (isDueToday(deadline)) return 'Today';
+    if (isOverdue(deadline))  return `Overdue · ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function sortedTodos() {
+    return [...todos].sort((a, b) => {
+      // Done tasks go to bottom
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      // Sort by priority
+      const pa = PRIORITY_ORDER[a.priority || 'normal'];
+      const pb = PRIORITY_ORDER[b.priority || 'normal'];
+      if (pa !== pb) return pa - pb;
+      // Sort by deadline (earliest first, no deadline last)
+      if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline);
+      if (a.deadline) return -1;
+      if (b.deadline) return 1;
+      return 0;
+    });
+  }
 
   function render() {
     listEl.innerHTML = '';
     if (todos.length === 0) { emptyEl.style.display = 'flex'; return; }
     emptyEl.style.display = 'none';
 
-    todos.forEach(todo => {
+    sortedTodos().forEach(todo => {
+      const priority = todo.priority || 'normal';
+      const overdue  = !todo.done && isOverdue(todo.deadline);
+      const dueToday = !todo.done && isDueToday(todo.deadline);
+
       const li = document.createElement('li');
-      li.className  = `todo-item${todo.done ? ' done' : ''}`;
+      li.className  = [
+        'todo-item',
+        todo.done   ? 'done'    : '',
+        overdue     ? 'overdue' : '',
+        dueToday    ? 'due-today' : '',
+        priority !== 'normal' ? `priority-${priority}` : '',
+      ].filter(Boolean).join(' ');
       li.dataset.id = todo.id;
+
+      // Priority indicator bar
+      if (priority !== 'normal') {
+        const bar = document.createElement('span');
+        bar.className = `priority-bar priority-bar--${priority}`;
+        bar.setAttribute('aria-hidden', 'true');
+        li.appendChild(bar);
+      }
 
       const cb = document.createElement('input');
       cb.type      = 'checkbox';
@@ -400,9 +614,21 @@ function showToast(message) {
       cb.setAttribute('aria-label', 'Mark task complete');
       cb.addEventListener('change', () => toggle(todo.id));
 
+      // Text + deadline badge
+      const textWrap = document.createElement('div');
+      textWrap.className = 'todo-text-wrap';
+
       const span = document.createElement('span');
       span.className   = 'todo-text';
       span.textContent = todo.text;
+      textWrap.appendChild(span);
+
+      if (todo.deadline) {
+        const badge = document.createElement('span');
+        badge.className   = `todo-deadline${overdue ? ' overdue' : dueToday ? ' today' : ''}`;
+        badge.textContent = formatDeadline(todo.deadline);
+        textWrap.appendChild(badge);
+      }
 
       const actions = document.createElement('div');
       actions.className = 'todo-actions';
@@ -410,30 +636,33 @@ function showToast(message) {
       const editBtn = document.createElement('button');
       editBtn.type      = 'button';
       editBtn.className = 'btn-icon';
-      editBtn.innerHTML = '✏️';
+      editBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
       editBtn.setAttribute('aria-label', 'Edit task');
       editBtn.addEventListener('click', () => openModal(todo.id));
 
       const delBtn = document.createElement('button');
       delBtn.type      = 'button';
       delBtn.className = 'btn-icon danger';
-      delBtn.innerHTML = '🗑️';
+      delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
       delBtn.setAttribute('aria-label', 'Delete task');
       delBtn.addEventListener('click', () => remove(todo.id));
 
       actions.append(editBtn, delBtn);
-      li.append(cb, span, actions);
+      li.append(cb, textWrap, actions);
       listEl.appendChild(li);
     });
   }
 
   function add() {
-    const text = inputEl.value.trim();
+    const text     = inputEl.value.trim();
+    const priority = prioritySelect.value;
     if (!text) return;
-    todos.push({ id: generateId(), text, done: false });
+
+    todos.push({ id: generateId(), text, done: false, priority, deadline: '' });
     save();
     render();
-    inputEl.value = '';
+    inputEl.value        = '';
+    prioritySelect.value = 'normal';
     inputEl.focus();
     showToast('Task added ✓');
 
@@ -450,31 +679,48 @@ function showToast(message) {
   }
 
   function remove(id) {
+    const deleted = todos.find(x => x.id === id);
+    const index   = todos.findIndex(x => x.id === id);
     todos = todos.filter(x => x.id !== id);
     save();
     render();
+    showToast('Task deleted', () => {
+      todos.splice(index, 0, deleted);
+      save();
+      render();
+    });
   }
 
   function openModal(id) {
     const t = todos.find(x => x.id === id);
     if (!t) return;
-    editingId        = id;
-    modalInput.value = t.text;
+    editingId              = id;
+    modalInput.value       = t.text;
+    modalPriority.value    = t.priority  || 'normal';
+    modalDeadline.value    = t.deadline  || '';
     overlayEl.classList.add('open');
     modalInput.focus();
   }
 
   function closeModal() {
     overlayEl.classList.remove('open');
-    editingId        = null;
-    modalInput.value = '';
+    editingId           = null;
+    modalInput.value    = '';
+    modalPriority.value = 'normal';
+    modalDeadline.value = '';
   }
 
   function saveEdit() {
     const text = modalInput.value.trim();
     if (!text) return;
     const t = todos.find(x => x.id === editingId);
-    if (t) { t.text = text; save(); render(); }
+    if (t) {
+      t.text     = text;
+      t.priority = modalPriority.value;
+      t.deadline = modalDeadline.value;
+      save();
+      render();
+    }
     closeModal();
     showToast('Task updated ✓');
   }
@@ -548,6 +794,21 @@ function showToast(message) {
       chip.target    = '_blank';
       chip.rel       = 'noopener noreferrer';
 
+      // Favicon via Google's favicon service
+      const favicon = document.createElement('img');
+      favicon.className = 'link-favicon';
+      favicon.alt       = '';
+      favicon.width     = 14;
+      favicon.height    = 14;
+      try {
+        const domain = new URL(link.url).hostname;
+        favicon.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      } catch {
+        favicon.style.display = 'none';
+      }
+      // Hide broken favicon gracefully
+      favicon.addEventListener('error', () => { favicon.style.display = 'none'; });
+
       const label = document.createElement('span');
       label.textContent = link.name;
 
@@ -562,7 +823,7 @@ function showToast(message) {
         remove(link.id);
       });
 
-      chip.append(label, removeBtn);
+      chip.append(favicon, label, removeBtn);
       gridEl.appendChild(chip);
     });
   }
@@ -653,4 +914,90 @@ function showToast(message) {
   window.addEventListener('scroll', () => {
     infoBtns.forEach(b => b.classList.remove('active'));
   }, { passive: true });
+})();
+
+
+// ─── WELCOME TOUR ─────────────────────────────────────────────────────────────
+
+(function initTour() {
+  // Only show on first visit (no onboarding_done yet)
+  if (storageGet('dashboard_tour_done', false)) return;
+
+  const overlay  = document.getElementById('tour-overlay');
+  const steps    = document.querySelectorAll('.tour-step');
+  const dots     = document.querySelectorAll('.tour-dot');
+  const nextBtn  = document.getElementById('tour-next');
+  const skipBtn  = document.getElementById('tour-skip');
+
+  let current = 0;
+  const total = steps.length;
+
+  overlay.classList.add('open');
+  nextBtn.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
+
+  function goTo(index) {
+    // Animate out current
+    steps[current].classList.add('slide-out-left');
+    setTimeout(() => {
+      steps[current].classList.remove('active', 'slide-out-left');
+      dots[current].classList.remove('active');
+
+      current = index;
+
+      steps[current].classList.add('active', 'slide-in-right');
+      dots[current].classList.add('active');
+
+      setTimeout(() => steps[current].classList.remove('slide-in-right'), 260);
+
+      nextBtn.textContent = current === total - 1 ? '' : 'Next →';
+      if (current === total - 1) {
+        nextBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Get Started';
+      } else {
+        nextBtn.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
+      }
+    }, 220);
+  }
+
+  function close() {
+    overlay.classList.remove('open');
+    storageSet('dashboard_tour_done', true);
+    // Also mark onboarding done so banner doesn't show
+    storageSet('dashboard_onboarding_done', true);
+    document.getElementById('onboarding').classList.add('hidden');
+  }
+
+  nextBtn.addEventListener('click', () => {
+    if (current < total - 1) {
+      goTo(current + 1);
+    } else {
+      close();
+    }
+  });
+
+  skipBtn.addEventListener('click', close);
+
+  // Click dots to jump to step
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      if (i !== current) goTo(i);
+    });
+  });
+
+  // Close on backdrop click
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) close();
+  });
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function onTourKey(e) {
+    if (!overlay.classList.contains('open')) {
+      document.removeEventListener('keydown', onTourKey);
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'Enter') {
+      if (current < total - 1) goTo(current + 1); else close();
+    }
+    if (e.key === 'ArrowLeft' && current > 0) goTo(current - 1);
+    if (e.key === 'Escape') close();
+  });
 })();
