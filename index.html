@@ -8,32 +8,27 @@
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════
-       ONBOARDING BANNER (first visit only)
-  ════════════════════════════════════════ -->
+  <!-- Settings Button (fixed) -->
+  <button type="button" class="settings-btn" id="settings-btn" aria-label="Open settings">⚙️</button>
+
+  <!-- Onboarding Banner -->
   <div class="onboarding" id="onboarding" role="status" aria-live="polite">
     <span class="onboarding-icon">👋</span>
-    <p class="onboarding-text">
-      Welcome! Add your first task and start your focus session.
-    </p>
+    <p class="onboarding-text">Welcome! Set your name in ⚙️ Settings, add a task, and start your focus session.</p>
     <button type="button" class="onboarding-close" id="onboarding-close" aria-label="Dismiss welcome message">✕</button>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       HERO / WELCOME SECTION
-  ════════════════════════════════════════ -->
+  <!-- Hero -->
   <header class="hero">
     <div class="hero-meta">
       <p id="greeting-text" class="greeting-text">Good morning</p>
       <p id="current-date" class="current-date">Loading…</p>
     </div>
-
     <div class="hero-body">
       <h1 class="hero-headline">Focus better.<br>Plan smarter.</h1>
       <p class="hero-sub">Organize tasks, stay focused, and keep your day on track — in one simple dashboard.</p>
       <button type="button" class="btn btn-cta" id="hero-cta">▶ Start Focus Session</button>
     </div>
-
     <div class="hero-clock">
       <time id="current-time" class="current-time" aria-label="Current time">00:00:00</time>
     </div>
@@ -41,11 +36,15 @@
 
   <main class="dashboard">
 
-    <!-- ═══════════════════════════════════════
-         FOCUS TIMER  (visual centerpiece)
-    ════════════════════════════════════════ -->
+    <!-- ── Focus Timer ── -->
     <section class="card timer-card" id="timer-section" aria-labelledby="timer-heading">
-      <h2 class="card-label" id="timer-heading">Focus Timer</h2>
+      <div class="card-header">
+        <h2 class="card-label" id="timer-heading">Focus Timer</h2>
+        <button class="info-btn" aria-label="About Focus Timer">
+          i
+          <span class="info-tooltip">Countdown timer berbasis Pomodoro. Mulai sesi fokus 25 menit, lalu ambil istirahat singkat. Bantu otak tetap fresh dan produktif sepanjang hari.</span>
+        </button>
+      </div>
 
       <div class="timer-ring" aria-hidden="true">
         <svg class="ring-svg" viewBox="0 0 120 120">
@@ -57,74 +56,77 @@
           <div class="timer-status" id="timer-status">Ready</div>
         </div>
       </div>
-
       <p class="timer-label" id="timer-label">Ready to focus?</p>
-
       <div class="timer-controls">
-        <button type="button" class="btn btn-primary" id="timer-start">
-          <span id="timer-start-text">Start</span>
-        </button>
+        <button type="button" class="btn btn-primary" id="timer-start"><span id="timer-start-text">Start</span></button>
         <button type="button" class="btn btn-secondary" id="timer-stop">Pause</button>
         <button type="button" class="btn btn-ghost" id="timer-reset">Reset</button>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════
-         TO-DO LIST
-    ════════════════════════════════════════ -->
+    <!-- ── Today's Tasks ── -->
     <section class="card todo-card" aria-labelledby="todo-heading">
-      <h2 class="card-label" id="todo-heading">Today's Tasks</h2>
+      <div class="card-header">
+        <h2 class="card-label" id="todo-heading">Today's Tasks</h2>
+        <button class="info-btn" aria-label="About Today's Tasks">
+          i
+          <span class="info-tooltip">Tulis semua yang perlu dikerjakan hari ini. Centang task yang sudah selesai, edit, atau hapus. Data tersimpan otomatis di browser kamu.</span>
+        </button>
+      </div>
 
       <div class="todo-input-row">
         <label for="todo-input" class="sr-only">New task</label>
-        <input
-          type="text"
-          id="todo-input"
-          class="field"
-          placeholder="What do you need to do?"
-          maxlength="120"
-          autocomplete="off"
-        />
+        <input type="text" id="todo-input" class="field" placeholder="What do you need to do?" maxlength="120" autocomplete="off" />
         <button type="button" class="btn btn-primary" id="todo-add">Add Task</button>
       </div>
-
       <ul class="todo-list" id="todo-list" aria-label="Task list"></ul>
-
       <div class="empty-state" id="todo-empty">
         <span class="empty-icon">📋</span>
         <p>Start by adding your first task for today.</p>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════
-         QUICK LINKS
-    ════════════════════════════════════════ -->
+    <!-- ── Quick Note ── -->
+    <section class="card note-card" aria-labelledby="note-heading">
+      <div class="card-header">
+        <h2 class="card-label" id="note-heading">Quick Note</h2>
+        <button class="info-btn" aria-label="About Quick Note">
+          i
+          <span class="info-tooltip">Tempat corat-coret ide cepat, pengingat singkat, atau draft sebelum dijadikan task. Otomatis tersimpan saat kamu berhenti mengetik.</span>
+        </button>
+      </div>
+
+      <textarea
+        class="note-textarea"
+        id="note-textarea"
+        placeholder="Tulis ide, pengingat, atau catatan cepat di sini…"
+        maxlength="500"
+        aria-label="Quick note"
+      ></textarea>
+      <div class="note-footer">
+        <span class="note-saved" id="note-saved">✓ Tersimpan</span>
+        <span class="note-char-count" id="note-char-count">0 / 500</span>
+      </div>
+    </section>
+
+    <!-- ── Quick Links ── -->
     <section class="card links-card" aria-labelledby="links-heading">
-      <h2 class="card-label" id="links-heading">Quick Links</h2>
+      <div class="card-header">
+        <h2 class="card-label" id="links-heading">Quick Links</h2>
+        <button class="info-btn" aria-label="About Quick Links">
+          i
+          <span class="info-tooltip">Simpan shortcut ke website yang sering kamu buka — Notion, GitHub, YouTube, dll. Klik chip untuk langsung membuka link di tab baru.</span>
+        </button>
+      </div>
 
       <div class="links-input-row">
         <label for="link-name-input" class="sr-only">Link label</label>
-        <input
-          type="text"
-          id="link-name-input"
-          class="field"
-          placeholder="Label"
-          maxlength="30"
-          autocomplete="off"
-        />
+        <input type="text" id="link-name-input" class="field" placeholder="Label" maxlength="30" autocomplete="off" />
         <label for="link-url-input" class="sr-only">Link URL</label>
-        <input
-          type="url"
-          id="link-url-input"
-          class="field field-url"
-          placeholder="https://example.com"
-          autocomplete="off"
-        />
+        <input type="url" id="link-url-input" class="field field-url" placeholder="https://example.com" autocomplete="off" />
         <button type="button" class="btn btn-primary" id="link-add">Add Link</button>
       </div>
-
       <div class="links-grid" id="links-grid" aria-label="Quick links"></div>
-
       <div class="empty-state" id="links-empty">
         <span class="empty-icon">🔗</span>
         <p>Save your frequently used links here.</p>
@@ -133,27 +135,90 @@
 
   </main>
 
-  <!-- ═══════════════════════════════════════
-       EDIT TASK MODAL
-  ════════════════════════════════════════ -->
-  <div
-    class="modal-overlay"
-    id="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="modal-title"
-  >
+  <!-- Settings Panel -->
+  <div class="settings-overlay" id="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <h3 class="settings-title" id="settings-title">⚙️ Settings</h3>
+        <button type="button" class="settings-close" id="settings-close" aria-label="Close settings">✕</button>
+      </div>
+
+      <!-- Custom Name -->
+      <div class="settings-section">
+        <div class="settings-label-row">
+          <label class="settings-label" for="settings-name">Your Name</label>
+          <button class="info-btn" aria-label="About Your Name setting">
+            i
+            <span class="info-tooltip">Nama kamu akan muncul di greeting — "Good morning, Aidil ☀️". Buat dashboard terasa lebih personal.</span>
+          </button>
+        </div>
+        <div class="settings-row">
+          <input type="text" id="settings-name" class="field" placeholder="e.g. Aidil" maxlength="30" autocomplete="off" />
+          <button type="button" class="btn btn-primary" id="settings-name-save">Save</button>
+        </div>
+      </div>
+
+      <!-- Light / Dark Mode -->
+      <div class="settings-section">
+        <div class="settings-label-row">
+          <span class="settings-label">Appearance</span>
+          <button class="info-btn" aria-label="About Appearance setting">
+            i
+            <span class="info-tooltip">Pilih tampilan gelap (default) atau terang sesuai preferensi dan kondisi cahaya sekitarmu.</span>
+          </button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">☀️ Light Mode</span>
+          <label class="toggle" aria-label="Toggle light mode">
+            <input type="checkbox" id="toggle-theme" />
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Pomodoro Times -->
+      <div class="settings-section">
+        <div class="settings-label-row">
+          <span class="settings-label">Pomodoro Timer</span>
+          <button class="info-btn" aria-label="About Pomodoro Timer setting">
+            i
+            <span class="info-tooltip">Atur durasi sesi fokus dan istirahat sesuai ritme kerjamu. Default: Fokus 25 menit, Istirahat Singkat 5 menit, Istirahat Panjang 15 menit.</span>
+          </button>
+        </div>
+        <div class="pomo-grid">
+          <div class="pomo-item">
+            <input type="number" id="pomo-focus" class="field" min="1" max="90" value="25" aria-label="Focus duration in minutes" />
+            <span class="pomo-sublabel">Focus (min)</span>
+          </div>
+          <div class="pomo-item">
+            <input type="number" id="pomo-short" class="field" min="1" max="30" value="5" aria-label="Short break duration in minutes" />
+            <span class="pomo-sublabel">Short break</span>
+          </div>
+          <div class="pomo-item">
+            <input type="number" id="pomo-long" class="field" min="1" max="60" value="15" aria-label="Long break duration in minutes" />
+            <span class="pomo-sublabel">Long break</span>
+          </div>
+        </div>
+        <div class="pomo-actions">
+          <button type="button" class="btn btn-primary pomo-action-btn" id="pomo-apply">Apply Times</button>
+          <button type="button" class="btn btn-ghost pomo-action-btn" id="pomo-reset-default">Reset Default</button>
+        </div>
+        <div class="pomo-modes">
+          <button type="button" class="btn btn-secondary pomo-mode-btn active" data-mode="focus">🎯 Focus</button>
+          <button type="button" class="btn btn-secondary pomo-mode-btn" data-mode="short">☕ Short</button>
+          <button type="button" class="btn btn-secondary pomo-mode-btn" data-mode="long">🛋️ Long</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
       <h3 class="modal-title" id="modal-title">Edit Task</h3>
       <label for="modal-input" class="sr-only">Task text</label>
-      <input
-        type="text"
-        id="modal-input"
-        class="field"
-        maxlength="120"
-        aria-label="Edit task"
-        placeholder="Edit your task…"
-      />
+      <input type="text" id="modal-input" class="field" maxlength="120" aria-label="Edit task" placeholder="Edit your task…" />
       <div class="modal-actions">
         <button type="button" class="btn btn-primary" id="modal-save">Save</button>
         <button type="button" class="btn btn-ghost" id="modal-cancel">Cancel</button>
@@ -161,7 +226,6 @@
     </div>
   </div>
 
-  <!-- Toast notification -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="js/app.js"></script>
