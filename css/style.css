@@ -148,7 +148,9 @@ img, svg, video, canvas, iframe {
    HERO — MOBILE FIRST
    ============================================= */
 .hero {
-  background: linear-gradient(160deg, rgba(0, 212, 255, 0.04) 0%, rgba(8, 12, 20, 0) 60%);
+  background:
+    linear-gradient(160deg, rgba(0, 212, 255, 0.04) 0%, rgba(8, 12, 20, 0) 60%),
+    url('../assets/hero-bg.svg') center bottom / cover no-repeat;
   border-bottom: 1px solid var(--border);
   position: relative;
   padding: var(--space-lg) var(--space-md) var(--space-md);
@@ -1640,7 +1642,10 @@ body.light-mode {
 }
 
 body.light-mode .hero {
-  background: linear-gradient(160deg, rgba(0, 136, 204, 0.04) 0%, rgba(240, 245, 255, 0) 60%);
+  background:
+    linear-gradient(160deg, rgba(0, 136, 204, 0.06) 0%, rgba(240, 245, 255, 0) 60%),
+    url('../assets/hero-bg.svg') center bottom / cover no-repeat;
+  filter: brightness(1.8) saturate(0.6);
 }
 
 body.light-mode .ring-track { stroke: var(--surface-2); }
