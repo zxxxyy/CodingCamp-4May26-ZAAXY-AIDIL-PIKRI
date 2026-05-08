@@ -25,9 +25,9 @@
       <p id="current-date" class="current-date">Loading…</p>
     </div>
     <div class="hero-body">
-      <h1 class="hero-headline">Focus better.<br>Plan smarter.</h1>
-      <p class="hero-sub">Organize tasks, stay focused, and keep your day on track — in one simple dashboard.</p>
-      <button type="button" class="btn btn-cta" id="hero-cta">▶ Start Focus Session</button>
+      <h1 class="hero-headline">Own your<br><em>attention.</em></h1>
+      <p class="hero-sub">A focused space for intentional work.</p>
+      <button type="button" class="btn btn-cta" id="hero-cta"><i class="fa-solid fa-play"></i> Start Focus Session</button>
     </div>
     <div class="hero-clock">
       <time id="current-time" class="current-time" aria-label="Current time">00:00:00</time>
@@ -47,7 +47,7 @@
         <h2 class="card-label" id="timer-heading">Focus Timer</h2>
         <button class="info-btn" aria-label="About Focus Timer">
           i
-          <span class="info-tooltip">Countdown timer berbasis Pomodoro. Mulai sesi fokus 25 menit, lalu ambil istirahat singkat. Bantu otak tetap fresh dan produktif sepanjang hari.</span>
+          <span class="info-tooltip-src">Countdown timer berbasis Pomodoro. Mulai sesi fokus 25 menit, lalu ambil istirahat singkat. Bantu otak tetap fresh dan produktif sepanjang hari.</span>
         </button>
       </div>
 
@@ -81,7 +81,7 @@
         <h2 class="card-label" id="todo-heading">Today's Tasks</h2>
         <button class="info-btn" aria-label="About Today's Tasks">
           i
-          <span class="info-tooltip">Tulis semua yang perlu dikerjakan hari ini. Centang task yang sudah selesai, edit, atau hapus. Data tersimpan otomatis di browser kamu.</span>
+          <span class="info-tooltip-src">Tulis semua yang perlu dikerjakan hari ini. Centang task yang sudah selesai, edit, atau hapus. Data tersimpan otomatis di browser kamu.</span>
         </button>
       </div>
 
@@ -96,6 +96,33 @@
         </select>
         <button type="button" class="btn btn-primary" id="todo-add">Add Task</button>
       </div>
+
+      <!-- Search & Filter -->
+      <div class="todo-toolbar">
+        <div class="todo-search-wrap">
+          <i class="fa-solid fa-magnifying-glass todo-search-icon"></i>
+          <input
+            type="search"
+            id="todo-search"
+            class="field todo-search"
+            placeholder="Search tasks…"
+            autocomplete="off"
+            aria-label="Search tasks"
+          />
+          <button type="button" class="todo-search-clear" id="todo-search-clear" aria-label="Clear search" hidden>
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="todo-filters" role="group" aria-label="Filter tasks">
+          <button type="button" class="filter-btn active" data-filter="all">All</button>
+          <button type="button" class="filter-btn" data-filter="active">Active</button>
+          <button type="button" class="filter-btn" data-filter="done">Done</button>
+          <button type="button" class="filter-btn" data-filter="high"><i class="fa-solid fa-circle filter-icon-high"></i> High</button>
+          <button type="button" class="filter-btn" data-filter="overdue"><i class="fa-solid fa-clock filter-icon-overdue"></i> Overdue</button>
+        </div>
+      </div>
+
+      <p class="todo-results-count" id="todo-results-count" aria-live="polite"></p>
       <ul class="todo-list" id="todo-list" aria-label="Task list"></ul>
       <div class="empty-state" id="todo-empty">
         <span class="empty-icon"><i class="fa-solid fa-clipboard-list"></i></span>
@@ -109,7 +136,7 @@
         <h2 class="card-label" id="note-heading">Quick Note</h2>
         <button class="info-btn" aria-label="About Quick Note">
           i
-          <span class="info-tooltip">Tempat corat-coret ide cepat, pengingat singkat, atau draft sebelum dijadikan task. Otomatis tersimpan saat kamu berhenti mengetik.</span>
+          <span class="info-tooltip-src">Tempat corat-coret ide cepat, pengingat singkat, atau draft sebelum dijadikan task. Otomatis tersimpan saat kamu berhenti mengetik.</span>
         </button>
       </div>
 
@@ -132,7 +159,7 @@
         <h2 class="card-label" id="links-heading">Quick Links</h2>
         <button class="info-btn" aria-label="About Quick Links">
           i
-          <span class="info-tooltip">Simpan shortcut ke website yang sering kamu buka — Notion, GitHub, YouTube, dll. Klik chip untuk langsung membuka link di tab baru.</span>
+          <span class="info-tooltip-src">Simpan shortcut ke website yang sering kamu buka — Notion, GitHub, YouTube, dll. Klik chip untuk langsung membuka link di tab baru.</span>
         </button>
       </div>
 
@@ -166,11 +193,11 @@
           <label class="settings-label" for="settings-name">Your Name</label>
           <button class="info-btn" aria-label="About Your Name setting">
             i
-            <span class="info-tooltip">Nama kamu akan muncul di greeting — "Good morning, Aidil ☀️". Buat dashboard terasa lebih personal.</span>
+            <span class="info-tooltip-src">Nama kamu akan muncul di greeting - "Good morning, Username ☀️". Buat dashboard terasa lebih personal.</span>
           </button>
         </div>
         <div class="settings-row">
-          <input type="text" id="settings-name" class="field" placeholder="e.g. Aidil" maxlength="30" autocomplete="off" />
+          <input type="text" id="settings-name" class="field" placeholder="e.g. yourname" maxlength="30" autocomplete="off" />
           <button type="button" class="btn btn-primary" id="settings-name-save">Save</button>
         </div>
       </div>
@@ -181,7 +208,7 @@
           <span class="settings-label">Appearance</span>
           <button class="info-btn" aria-label="About Appearance setting">
             i
-            <span class="info-tooltip">Pilih tampilan gelap (default) atau terang sesuai preferensi dan kondisi cahaya sekitarmu.</span>
+            <span class="info-tooltip-src">Pilih tampilan gelap (default) atau terang sesuai preferensi dan kondisi cahaya sekitarmu.</span>
           </button>
         </div>
         <div class="toggle-row">
@@ -199,7 +226,7 @@
           <span class="settings-label">Pomodoro Timer</span>
           <button class="info-btn" aria-label="About Pomodoro Timer setting">
             i
-            <span class="info-tooltip">Atur durasi sesi fokus dan istirahat sesuai ritme kerjamu. Default: Fokus 25 menit, Istirahat Singkat 5 menit, Istirahat Panjang 15 menit.</span>
+            <span class="info-tooltip-src">Atur durasi sesi fokus dan istirahat sesuai ritme kerjamu. Default: Fokus 25 menit, Istirahat Singkat 5 menit, Istirahat Panjang 15 menit.</span>
           </button>
         </div>
         <div class="pomo-grid">
@@ -261,6 +288,9 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Shared tooltip (rendered at body level, outside all cards) -->
+  <div class="info-tooltip-global" id="global-tooltip" role="tooltip" aria-label="Feature description"></div>
 
   <!-- Welcome Tour (first visit only) -->
   <div class="tour-overlay" id="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-title">

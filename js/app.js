@@ -543,7 +543,12 @@ function showToast(message, undoCallback = null) {
   const PRIORITY_ORDER = { high: 0, medium: 1, normal: 2, low: 3 };
   const PRIORITY_ICON  = { high: '🔴', medium: '🟡', low: '🟢', normal: '' };
 
-  function save() { storageSet('dashboard_todos', todos); }
+  let applySearchFilter = null; // set after search init
+
+  function save() {
+    storageSet('dashboard_todos', todos);
+    if (applySearchFilter) setTimeout(applySearchFilter, 0);
+  }
 
   function isOverdue(deadline) {
     if (!deadline) return false;
@@ -675,7 +680,28 @@ function showToast(message, undoCallback = null) {
 
   function toggle(id) {
     const t = todos.find(x => x.id === id);
-    if (t) { t.done = !t.done; save(); render(); }
+    if (!t) return;
+    t.done = !t.done;
+    save();
+    render();
+
+    // Completion micro-delight
+    if (t.done) {
+      const li = document.querySelector(`.todo-item[data-id="${id}"]`);
+      if (li) li.classList.add('completing');
+
+      const done  = todos.filter(x => x.done).length;
+      const total = todos.length;
+
+      if (done === total) {
+        showToast('🎉 All tasks complete! Incredible work.');
+      } else if (done === Math.floor(total / 2) && total > 2) {
+        showToast(`⚡ Halfway there — ${done}/${total} done!`);
+      } else {
+        const msgs = ['✓ Nice work!', '✓ One down!', '✓ Keep going!', '✓ Momentum!'];
+        showToast(msgs[Math.floor(Math.random() * msgs.length)]);
+      }
+    }
   }
 
   function remove(id) {
@@ -734,6 +760,134 @@ function showToast(message, undoCallback = null) {
     if (e.key === 'Escape') closeModal();
   });
   overlayEl.addEventListener('click', e => { if (e.target === overlayEl) closeModal(); });
+
+  // ── Search & Filter ───────────────────────────────────────────────────────
+  const searchInput   = document.getElementById('todo-search');
+  const searchClear   = document.getElementById('todo-search-clear');
+  const filterBtns    = document.querySelectorAll('.filter-btn');
+  const resultsCount  = document.getElementById('todo-results-count');
+
+  let searchQuery  = '';
+  let activeFilter = 'all';
+
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function highlightText(text, query) {
+    if (!query) return document.createTextNode(text);
+    const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+    const frag  = document.createDocumentFragment();
+    text.split(regex).forEach(part => {
+      if (regex.test(part)) {
+        const mark = document.createElement('mark');
+        mark.textContent = part;
+        frag.appendChild(mark);
+        regex.lastIndex = 0;
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    });
+    return frag;
+  }
+
+  function applySearchAndFilter() {
+    const items      = listEl.querySelectorAll('.todo-item');
+    const q          = searchQuery.toLowerCase();
+    let   visible    = 0;
+
+    items.forEach(li => {
+      const id   = li.dataset.id;
+      const todo = todos.find(t => t.id === id);
+      if (!todo) return;
+
+      // Filter match
+      let filterPass = true;
+      if (activeFilter === 'active')  filterPass = !todo.done;
+      if (activeFilter === 'done')    filterPass = todo.done;
+      if (activeFilter === 'high')    filterPass = (todo.priority || 'normal') === 'high';
+      if (activeFilter === 'overdue') filterPass = !todo.done && isOverdue(todo.deadline);
+
+      // Search match
+      const searchPass = !q || todo.text.toLowerCase().includes(q);
+
+      const show = filterPass && searchPass;
+      li.classList.toggle('hidden', !show);
+
+      // Highlight matched text
+      if (show) {
+        const textEl = li.querySelector('.todo-text');
+        if (textEl) {
+          textEl.innerHTML = '';
+          textEl.appendChild(highlightText(todo.text, searchQuery));
+        }
+        visible++;
+      }
+    });
+
+    // Results count
+    if (q || activeFilter !== 'all') {
+      const total = todos.length;
+      resultsCount.textContent = `${visible} of ${total} task${total !== 1 ? 's' : ''}`;
+    } else {
+      resultsCount.textContent = '';
+    }
+
+    // Empty state
+    const allHidden = visible === 0 && todos.length > 0;
+    const noTasks   = todos.length === 0;
+    const emptyEl   = document.getElementById('todo-empty');
+    if (noTasks) {
+      emptyEl.style.display = 'flex';
+      emptyEl.querySelector('p').textContent = 'Start by adding your first task for today.';
+    } else if (allHidden) {
+      emptyEl.style.display = 'flex';
+      emptyEl.querySelector('p').textContent = q
+        ? `No tasks match "${searchQuery}".`
+        : 'No tasks match this filter.';
+    } else {
+      emptyEl.style.display = 'none';
+    }
+  }
+
+  // Assign to the hoisted variable so save() can call it
+  applySearchFilter = applySearchAndFilter;
+
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim();
+    searchClear.hidden = !searchQuery;
+    applySearchAndFilter();
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchQuery       = '';
+    searchClear.hidden = true;
+    searchInput.focus();
+    applySearchAndFilter();
+  });
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      applySearchAndFilter();
+    });
+  });
+
+  // Re-apply after every render
+  const _originalRender = render;
+  function renderWithFilter() {
+    _originalRender();
+    applySearchAndFilter();
+  }
+
+  // Patch all callers to use renderWithFilter
+  addBtn.addEventListener('click', () => {});   // already bound above
+  // Override render reference used internally
+  Object.defineProperty(window, '_todoRenderWithFilter', { value: applySearchAndFilter });
+  // ─────────────────────────────────────────────────────────────────────────
 
   render();
 })();
@@ -825,6 +979,9 @@ function showToast(message, undoCallback = null) {
 
       chip.append(favicon, label, removeBtn);
       gridEl.appendChild(chip);
+
+      // Micro-delight: stagger entrance
+      chip.style.animationDelay = `${links.indexOf(link) * 0.05}s`;
     });
   }
 
@@ -857,63 +1014,74 @@ function showToast(message, undoCallback = null) {
 })();
 
 
-// ─── INFO TOOLTIP TOGGLE (mobile tap support) ────────────────────────────────
+// ─── INFO TOOLTIP — global singleton, body-level ─────────────────────────────
 
 (function initTooltips() {
-  const infoBtns = document.querySelectorAll('.info-btn');
+  const globalTip = document.getElementById('global-tooltip');
+  const MARGIN    = 12;
+  let hideTimer   = null;
 
-  function positionTooltip(btn) {
-    const tooltip = btn.querySelector('.info-tooltip');
-    if (!tooltip) return;
+  function showTip(btn) {
+    // Get text from the hidden span inside the button
+    const src = btn.querySelector('.info-tooltip-src');
+    if (!src) return;
 
-    // Reset positioning so we can measure correctly
-    tooltip.style.left   = '';
-    tooltip.style.top    = '';
-    tooltip.style.right  = '';
-    tooltip.style.bottom = '';
+    clearTimeout(hideTimer);
+    globalTip.textContent = src.textContent.trim();
+    globalTip.classList.remove('above');
 
-    const btnRect     = btn.getBoundingClientRect();
-    const tipWidth    = tooltip.offsetWidth  || 220;
-    const tipHeight   = tooltip.offsetHeight || 80;
-    const margin      = 8;
-    const screenW     = window.innerWidth;
-    const screenH     = window.innerHeight;
+    const btnRect = btn.getBoundingClientRect();
+    const tipW    = 220;
+    const tipH    = globalTip.offsetHeight || 90;
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
 
-    // Vertical: prefer below, flip above if not enough room
-    let top = btnRect.bottom + margin;
-    if (top + tipHeight > screenH - margin) {
-      top = btnRect.top - tipHeight - margin;
+    // Prefer below, flip above if not enough room
+    let top  = btnRect.bottom + MARGIN;
+    let above = false;
+    if (top + tipH > screenH - MARGIN) {
+      top   = btnRect.top - tipH - MARGIN;
+      above = true;
     }
 
-    // Horizontal: center on button, clamp to viewport
-    let left = btnRect.left + btnRect.width / 2 - tipWidth / 2;
-    left = Math.max(margin, Math.min(left, screenW - tipWidth - margin));
+    // Center on button, clamp to viewport
+    let left = btnRect.left + btnRect.width / 2 - tipW / 2;
+    left = Math.max(MARGIN, Math.min(left, screenW - tipW - MARGIN));
 
-    tooltip.style.top  = `${top}px`;
-    tooltip.style.left = `${left}px`;
+    globalTip.style.top  = `${Math.round(top)}px`;
+    globalTip.style.left = `${Math.round(left)}px`;
+    if (above) globalTip.classList.add('above');
+
+    globalTip.classList.add('visible');
   }
 
-  infoBtns.forEach(btn => {
+  function hideTip() {
+    hideTimer = setTimeout(() => {
+      globalTip.classList.remove('visible', 'above');
+    }, 80);
+  }
+
+  document.querySelectorAll('.info-btn').forEach(btn => {
+    // Desktop: hover
+    btn.addEventListener('mouseenter', () => showTip(btn));
+    btn.addEventListener('mouseleave', hideTip);
+    btn.addEventListener('focus',      () => showTip(btn));
+    btn.addEventListener('blur',       hideTip);
+
+    // Mobile: tap toggle
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isActive = btn.classList.contains('active');
-      // Close all others
-      infoBtns.forEach(b => b.classList.remove('active'));
-      if (!isActive) {
-        btn.classList.add('active');
-        positionTooltip(btn);
+      if (window.matchMedia('(hover: hover)').matches) return;
+      if (globalTip.classList.contains('visible')) {
+        hideTip();
+      } else {
+        showTip(btn);
       }
     });
   });
 
-  // Close on outside click or scroll
-  document.addEventListener('click', () => {
-    infoBtns.forEach(b => b.classList.remove('active'));
-  });
-
-  window.addEventListener('scroll', () => {
-    infoBtns.forEach(b => b.classList.remove('active'));
-  }, { passive: true });
+  document.addEventListener('click', hideTip);
+  window.addEventListener('scroll', hideTip, { passive: true });
 })();
 
 
